@@ -1,0 +1,719 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd">
+
+<!-- 该xml需先在mybatis.xml中注册 -->
+<mapper namespace="com.fudax.sqcs.bug.dao.BugAnalysisDAO">
+
+	<select id="bug_density_complex" resultMap = "bug_density_complex_return">
+		select c.system_version, 
+			   c.version_density, 
+			   c.man_power, 
+			   c.bug_num, 
+			   a.srsum 
+	    from dept_system d, 
+	         version_manpower as c, 
+	         (select system_version, 
+	                 count(sr_code) as srsum 
+	          from version_manpower 
+	          where system_version != sr_code 
+	          group by system_version) as a, 
+			 (select sub_system_name, 
+			 		 system_version,
+			 		 reviewTest_end_date 
+			  from version_plantime 
+			  where version_plantime.reviewtest_end_date >= #{pro_date_begin} 
+			    and  #{pro_date_end} >= version_plantime.reviewtest_end_date) as b 
+		where c.system_version = a.system_version 
+		      and c.system_version = b.system_version
+		      and c.version_density != '' 
+		      and d.system_alias = #{system}
+		      and d.system_name = b.sub_system_name 
+		order by b.reviewtest_end_date
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_density_complex_return">
+		<result property="system_version" column = "system_version" javaType = "String"/>
+		<result property="version_density" column="version_density" javaType = "String"/>
+		<result property="man_power" column="man_power" javaType="String"/>
+		<result property="bug_num" column="bug_num" javaType = "String"/>
+		<result property="srsum" column="srsum" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_distribute_system" resultMap = "bug_distribute_system_return">
+		select modual_name, 
+			   bug_num 
+	    from bug_distribute, dept_system 
+	    where dept_system.system_alias = #{system}
+	    	  and dept_system.system_name = bug_distribute.system_version
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_distribute_system_return">
+		<result property="modual_name" column="modual_name" javaType = "String"/>
+		<result property="bug_num" column="bug_num" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_distribute_version" resultMap = "bug_distribute_version_return">
+		select modual_name,
+			   bug_num 
+	    from bug_distribute 
+	    where system_version = #{version}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_distribute_version_return">
+		<result property="modual_name" column = "modual_name" javaType = "String"/>
+		<result property="bug_num" column="bug_num" javaType = "String"/>
+	</resultMap>
+	
+	<select id="bug_sr_distribute" resultMap = "bug_sr_distribute_return">
+		select sr_code, 
+			   bug_num 
+	    from version_manpower 
+	    where system_version = #{version} 
+	          and bug_num != 0
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_sr_distribute_return">
+		<result property="sr_code" column = "sr_code" javaType = "String"/>
+		<result property="bug_num" column="bug_num" javaType = "String"/>
+	</resultMap>
+	
+	<select id="bug_sr_density" resultMap = "bug_sr_density_return">
+		select sr_code, 
+			   sr_density 
+	    from version_manpower 
+	    where system_version = #{version} 
+	          and sr_density is not null
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_sr_density_return">
+		<result property="sr_code" column = "sr_code" javaType = "String"/>
+		<result property="sr_density" column="sr_density" javaType = "String"/>
+	</resultMap>
+	
+	<select id="bug_finder_system_by_test_team" resultMap = "bug_finder_system_by_test_team_return">
+		select bg.person_name, 
+			   bg.l1_bug_num, 
+			   bg.l2_bug_num, 
+			   bg.l3_bug_num, 
+			   bg.l4_bug_num 
+	    from bug_group_by_person bg, dept_system ds 
+	    where ds.system_name = bg.system_version 
+	          and bg.person_type = 'tester' 
+	          and ds.system_alias = #{system} 
+	          and test_team = #{group_name} 
+		order by bg.l1_bug_num +bg.l2_bug_num + bg.l3_bug_num + bg.l4_bug_num desc
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_finder_system_by_test_team_return">
+		<result property="person_name" column="person_name" javaType = "String"/>
+		<result property="l1_bug_num" column = "l1_bug_num" javaType = "String"/>
+		<result property="l2_bug_num" column="l2_bug_num" javaType = "String"/>
+		<result property="l3_bug_num" column="l3_bug_num" javaType="String"/>
+		<result property="l4_bug_num" column="l4_bug_num" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_finder_system_by_dev_dept" resultMap = "bug_finder_system_by_dev_dept_return">
+		select bg.person_name, 
+			   bg.l1_bug_num, 
+			   bg.l2_bug_num, 
+			   bg.l3_bug_num, 
+			   bg.l4_bug_num 
+	    from bug_group_by_person bg, dept_system ds 
+	    where ds.system_name = bg.system_version 
+	          and bg.person_type = 'tester' 
+	          and ds.system_alias = #{system} 
+	          and dev_dept = #{group_name}
+		order by bg.l1_bug_num +bg.l2_bug_num + bg.l3_bug_num + bg.l4_bug_num desc
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_finder_system_by_dev_dept_return">
+		<result property="person_name" column="person_name" javaType = "String"/>
+		<result property="l1_bug_num" column = "l1_bug_num" javaType = "String"/>
+		<result property="l2_bug_num" column="l2_bug_num" javaType = "String"/>
+		<result property="l3_bug_num" column="l3_bug_num" javaType="String"/>
+		<result property="l4_bug_num" column="l4_bug_num" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_finder_version" resultMap = "bug_finder_version_return">
+		select person_name, 
+			   l1_bug_num, 
+			   l2_bug_num, 
+			   l3_bug_num, 
+			   l4_bug_num 
+		from bug_group_by_person where person_type = 'tester' 
+		     and system_version = #{version}
+		order by l1_bug_num + l2_bug_num + l3_bug_num + l4_bug_num desc
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_finder_version_return">
+		<result property="person_name" column = "person_name" javaType = "String"/>
+		<result property="l1_bug_num" column="l1_bug_num" javaType = "String"/>
+		<result property="l2_bug_num" column="l2_bug_num" javaType="String"/>
+		<result property="l3_bug_num" column = "l3_bug_num" javaType = "String"/>
+		<result property="l4_bug_num" column="l4_bug_num" javaType = "String"/>
+	</resultMap>
+	
+	<select id="bug_fix_system_by_test_team" resultMap = "bug_fix_system_by_test_team_return">
+		select sum(bct.no_overtime) as sum_no_overtime, 
+			   sum(bct.overtime) as sum_overtime, 
+			   sum(bct.one_day) as sum_one_day,
+			   sum(bct.two_day) as sum_two_day, 
+			   sum(bct.more_than_two_day) as sum_more_than_two_day
+	    from bug_check_time bct,version_plantime vp, dept_system ds 
+	    where bct.system_version = vp.system_version
+			  and vp.sub_system_name = ds.system_name 
+			  and ds.test_team = #{group_name}
+			  and vp.reviewtest_end_date >= #{start_time}
+			  and  #{end_time} >= vp.reviewtest_end_date
+			  and bct.deal_or_check = 'deal'
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_fix_system_by_test_team_return">
+		<result property="sum_no_overtime" column = "sum_no_overtime" javaType = "String"/>
+		<result property="sum_one_day" column="sum_one_day" javaType = "String"/>
+		<result property="sum_overtime" column="sum_overtime" javaType="String"/>
+		<result property="sum_two_day" column="sum_two_day" javaType = "String"/>
+		<result property="sum_more_than_two_day" column="sum_more_than_two_day" javaType="String"/>
+	</resultMap>
+	
+	
+	<select id="bug_fix_system_by_dev_dept" resultMap = "bug_fix_system_by_dev_dept_return">
+		select sum(bct.no_overtime) as sum_no_overtime, 
+			   sum(bct.overtime) as sum_overtime, 
+			   sum(bct.one_day) as sum_one_day,
+			   sum(bct.two_day) as sum_two_day, 
+			   sum(bct.more_than_two_day) as sum_more_than_two_day
+	    from bug_check_time bct,version_plantime vp, dept_system ds 
+	    where bct.system_version = vp.system_version
+			  and vp.sub_system_name = ds.system_name 
+			  and ds.dev_dept = #{group_name}
+			  and vp.reviewtest_end_date >= #{start_time}
+			  and  #{end_time} >= vp.reviewtest_end_date
+			  and bct.deal_or_check = 'deal'
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_fix_system_by_dev_dept_return">
+		<result property="sum_no_overtime" column = "sum_no_overtime" javaType = "String"/>
+		<result property="sum_one_day" column="sum_one_day" javaType = "String"/>
+		<result property="sum_overtime" column="sum_overtime" javaType="String"/>
+		<result property="sum_two_day" column="sum_two_day" javaType = "String"/>
+		<result property="sum_more_than_two_day" column="sum_more_than_two_day" javaType="String"/>
+	</resultMap>
+	
+	
+	<select id="bug_fix_system_by_system" resultMap = "bug_fix_system_by_system_return">
+		select sum(bct.no_overtime) as sum_no_overtime, 
+			   sum(bct.overtime) as sum_overtime, 
+			   sum(bct.one_day) as sum_one_day,
+			   sum(bct.two_day) as sum_two_day, 
+			   sum(bct.more_than_two_day) as sum_more_than_two_day
+		from bug_check_time bct,version_plantime vp, dept_system ds 
+		where bct.system_version = vp.system_version
+			  and vp.sub_system_name = ds.system_name 
+			  and ds.system_alias = #{system}
+			  and vp.reviewtest_end_date >= #{start_time}
+			  and  #{end_time} >= vp.reviewtest_end_date
+			  and bct.deal_or_check = 'deal' 
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_fix_system_by_system_return">
+		<result property="sum_no_overtime" column = "sum_no_overtime" javaType = "String"/>
+		<result property="sum_one_day" column="sum_one_day" javaType = "String"/>
+		<result property="sum_overtime" column="sum_overtime" javaType="String"/>
+		<result property="sum_two_day" column="sum_two_day" javaType = "String"/>
+		<result property="sum_more_than_two_day" column="sum_more_than_two_day" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_fix_version" resultMap = "bug_fix_version_return">
+		select no_overtime,
+		       overtime,
+		       one_day,
+		       two_day,
+		       more_than_two_day 
+		from bug_check_time 
+		where deal_or_check ='check' 
+		      AND system_version = #{version}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_fix_version_return">
+		<result property="no_overtime" column = "no_overtime" javaType = "String"/>
+		<result property="overtime" column="overtime" javaType = "String"/>
+		<result property="one_day" column="one_day" javaType="String"/>
+		<result property="two_day" column="two_day" javaType = "String"/>
+		<result property="more_than_two_day" column="more_than_two_day" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_producer_system_by_test_team" resultMap = "bug_producer_system_by_test_team_return">
+		select distinct bg.person_name, 
+			   bg.l1_bug_num, 
+			   bg.l2_bug_num, 
+			   bg.l3_bug_num, 
+			   bg.l4_bug_num 
+		from bug_group_by_person bg, dept_system ds 
+		where ds.system_name = bg.system_version 
+		      and bg.person_type = 'developer' 
+			  and ds.system_alias = #{system}
+			  and ds.test_team= #{group_name}
+	    order by bg.l1_bug_num + bg.l2_bug_num + bg.l3_bug_num + bg.l4_bug_num desc
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_producer_system_by_test_team_return">
+		<result property="person_name" column = "person_name" javaType = "String"/>
+		<result property="l1_bug_num" column="l1_bug_num" javaType = "String"/>
+		<result property="l2_bug_num" column="l2_bug_num" javaType="String"/>
+		<result property="l3_bug_num" column="l3_bug_num" javaType = "String"/>
+		<result property="l4_bug_num" column="l4_bug_num" javaType="String"/>
+	</resultMap>
+	
+	
+	<select id="bug_producer_system_by_dev_dept" resultMap = "bug_producer_system_by_dev_dept_return">
+		select distinct bg.person_name, 
+			   bg.l1_bug_num, 
+			   bg.l2_bug_num, 
+			   bg.l3_bug_num, 
+			   bg.l4_bug_num 
+		from bug_group_by_person bg, dept_system ds 
+		where ds.system_name = bg.system_version 
+		      and bg.person_type = 'developer' 
+			  and ds.system_alias = #{system}
+			  and ds.dev_dept= #{group_name}
+	    order by bg.l1_bug_num + bg.l2_bug_num + bg.l3_bug_num + bg.l4_bug_num desc
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_producer_system_by_dev_dept_return">
+		<result property="person_name" column = "person_name" javaType = "String"/>
+		<result property="l1_bug_num" column="l1_bug_num" javaType = "String"/>
+		<result property="l2_bug_num" column="l2_bug_num" javaType="String"/>
+		<result property="l3_bug_num" column="l3_bug_num" javaType = "String"/>
+		<result property="l4_bug_num" column="l4_bug_num" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_producer_version" resultMap = "bug_producer_version_return">
+		select person_name, 
+		       l1_bug_num, 
+		       l2_bug_num, 
+		       l3_bug_num, 
+		       l4_bug_num 
+	    from bug_group_by_person
+	    where person_type='developer' 
+	          and system_version =#{version} 
+		order by l1_bug_num + l2_bug_num + l3_bug_num + l4_bug_num desc
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_producer_version_return">
+		<result property="person_name" column = "person_name" javaType = "String"/>
+		<result property="l1_bug_num" column="l1_bug_num" javaType = "String"/>
+		<result property="l2_bug_num" column="l2_bug_num" javaType="String"/>
+		<result property="l3_bug_num" column="l3_bug_num" javaType = "String"/>
+		<result property="l4_bug_num" column="l4_bug_num" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_repairs_num_system_by_test_team" resultMap = "bug_repairs_num_system_by_test_team_return">
+		select if(sum(ad.aa) is null,0,sum(ad.aa)) ab 
+		from ( select pl.`pro_nopass_num`,count(*) aa 
+			   from problem_list pl,dept_system ds,version_plantime vp 
+			   where pl.pro_system = ds.system_name 
+			         and ds.test_team = #{group_name}
+					 and pl.pro_version=vp.system_version 
+					 and vp.reviewtest_end_date>=#{start_time} 
+					 and  #{end_time} >=vp.reviewtest_end_date
+					 and pl.pro_nopass_num =0 
+			   group by pl.pro_nopass_num )ad 
+		union all 
+		select if(sum(ad.aa) is null,0,sum(ad.aa)) ab 
+		from ( select pl.`pro_nopass_num`,count(*) aa 
+			   from problem_list pl,dept_system ds,version_plantime vp 
+			   where pl.pro_system = ds.system_name 
+			  		 and ds.test_team = #{group_name}
+			  		 and pl.pro_version=vp.system_version 
+			  		 and vp.reviewtest_end_date>=#{start_time} 
+					 and  #{end_time} >=vp.reviewtest_end_date 
+			  		 and pl.pro_nopass_num =1 
+	   		   group by pl.pro_nopass_num )ad 
+		union all 
+		select if(sum(ad.aa) is null,0,sum(ad.aa)) ab 
+		from (select pl.`pro_nopass_num`,count(*) aa 
+			  from problem_list pl,dept_system ds,version_plantime vp 
+			  where pl.pro_system = ds.system_name 
+			  		and ds.test_team = #{group_name}
+			  		and pl.pro_version=vp.system_version 
+			  		and vp.reviewtest_end_date>=#{start_time} 
+					and  #{end_time} >=vp.reviewtest_end_date  
+				    and pl.pro_nopass_num =2 
+			  group by pl.pro_nopass_num )ad 
+		union all 
+		select if(sum(ab.aa) is null,0,sum(ab.aa)) ab 
+		from  (select if (count(*)is null,0,count(*)) aa 
+			   from problem_list pl,dept_system ds,version_plantime vp 
+			   where pl.pro_system = ds.system_name 
+			  		 and ds.test_team = #{group_name}
+			  		 and pl.pro_version=vp.system_version 
+			   		 and vp.reviewtest_end_date>=#{start_time} 
+					 and  #{end_time} >=vp.reviewtest_end_date 
+			   group by pl.pro_nopass_num 
+			   having pl.pro_nopass_num >=3) ab
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_repairs_num_system_by_test_team_return">
+		<result property="ab" column="ab" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_repairs_num_system_by_dev_dept" resultMap = "bug_repairs_num_system_by_dev_dept_return">
+		select if(sum(ad.aa) is null,0,sum(ad.aa)) ab 
+		from ( select pl.`pro_nopass_num`,count(*) aa 
+			   from problem_list pl,dept_system ds,version_plantime vp 
+			   where pl.pro_system = ds.system_name 
+			         and ds.dev_dept = #{group_name}
+					 and pl.pro_version=vp.system_version 
+					 and vp.reviewtest_end_date>=#{start_time} 
+					 and  #{end_time} >=vp.reviewtest_end_date
+					 and pl.pro_nopass_num =0 
+			   group by pl.pro_nopass_num )ad 
+		union all 
+		select if(sum(ad.aa) is null,0,sum(ad.aa)) ab 
+		from ( select pl.`pro_nopass_num`,count(*) aa 
+			   from problem_list pl,dept_system ds,version_plantime vp 
+			   where pl.pro_system = ds.system_name 
+			  		 and ds.dev_dept = #{group_name}
+			  		 and pl.pro_version=vp.system_version 
+			  		 and vp.reviewtest_end_date>=#{start_time} 
+					 and  #{end_time} >=vp.reviewtest_end_date 
+			  		 and pl.pro_nopass_num =1 
+	   		   group by pl.pro_nopass_num )ad 
+		union all 
+		select if(sum(ad.aa) is null,0,sum(ad.aa)) ab 
+		from (select pl.`pro_nopass_num`,count(*) aa 
+			  from problem_list pl,dept_system ds,version_plantime vp 
+			  where pl.pro_system = ds.system_name 
+			  		and ds.dev_dept = #{group_name}
+			  		and pl.pro_version=vp.system_version 
+			  		and vp.reviewtest_end_date>=#{start_time} 
+					and  #{end_time} >=vp.reviewtest_end_date  
+				    and pl.pro_nopass_num =2 
+			  group by pl.pro_nopass_num )ad 
+		union all 
+		select if(sum(ab.aa) is null,0,sum(ab.aa)) ab 
+		from  (select if (count(*)is null,0,count(*)) aa 
+			   from problem_list pl,dept_system ds,version_plantime vp 
+			   where pl.pro_system = ds.system_name 
+			  		 and ds.dev_dept = #{group_name}
+			  		 and pl.pro_version=vp.system_version 
+			   		 and vp.reviewtest_end_date>=#{start_time} 
+					 and  #{end_time} >=vp.reviewtest_end_date 
+			   group by pl.pro_nopass_num 
+			   having pl.pro_nopass_num >=3) ab
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_repairs_num_system_by_dev_dept_return">
+		<result property="ab" column="ab" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_repairs_num_system_by_system" resultMap = "bug_repairs_num_system_by_system_return">
+		select if(sum(ad.aa) is null,0,sum(ad.aa)) ab 
+		from ( select pl.`pro_nopass_num`,count(*) aa 
+			   from problem_list pl,dept_system ds,version_plantime vp 
+			   where pl.pro_system = ds.system_name 
+			         and ds.system_alias=#{system}
+					 and pl.pro_version=vp.system_version 
+					 and vp.reviewtest_end_date>=#{start_time} 
+					 and  #{end_time} >=vp.reviewtest_end_date
+					 and pl.pro_nopass_num =0 
+			   group by pl.pro_nopass_num )ad 
+		union all 
+		select if(sum(ad.aa) is null,0,sum(ad.aa)) ab 
+		from ( select pl.`pro_nopass_num`,count(*) aa 
+			   from problem_list pl,dept_system ds,version_plantime vp 
+			   where pl.pro_system = ds.system_name 
+			  		 and ds.system_alias=#{system}
+			  		 and pl.pro_version=vp.system_version 
+			  		 and vp.reviewtest_end_date>=#{start_time} 
+					 and  #{end_time} >=vp.reviewtest_end_date 
+			  		 and pl.pro_nopass_num =1 
+	   		   group by pl.pro_nopass_num )ad 
+		union all 
+		select if(sum(ad.aa) is null,0,sum(ad.aa)) ab 
+		from (select pl.`pro_nopass_num`,count(*) aa 
+			  from problem_list pl,dept_system ds,version_plantime vp 
+			  where pl.pro_system = ds.system_name 
+			  		and ds.system_alias=#{system}
+			  		and pl.pro_version=vp.system_version 
+			  		and vp.reviewtest_end_date>=#{start_time} 
+					and  #{end_time} >=vp.reviewtest_end_date  
+				    and pl.pro_nopass_num =2 
+			  group by pl.pro_nopass_num )ad 
+		union all 
+		select if(sum(ab.aa) is null,0,sum(ab.aa)) ab 
+		from  (select if (count(*)is null,0,count(*)) aa 
+			   from problem_list pl,dept_system ds,version_plantime vp 
+			   where pl.pro_system = ds.system_name 
+			  		 and ds.system_alias=#{system}
+			  		 and pl.pro_version=vp.system_version 
+			   		 and vp.reviewtest_end_date>=#{start_time} 
+					 and  #{end_time} >=vp.reviewtest_end_date 
+			   group by pl.pro_nopass_num 
+			   having pl.pro_nopass_num >=3) ab
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_repairs_num_system_by_system_return">
+		<result property="ab" column="ab" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_repairs_num_version" resultMap = "bug_repairs_num_version_return">
+				SELECT IF( SUM(ad.sum)>0,SUM(ad.sum),0) SUM 
+		     	FROM ((SELECT COUNT(*)SUM 
+		            FROM problem_list 
+		            WHERE pro_version=#{version} 
+		            AND pro_nopass_num=0 )AS ad)
+	   		 UNION ALL
+			    SELECT IF( SUM(ad.sum)>0,SUM(ad.sum),0) SUM 
+			    FROM ((SELECT COUNT(*)SUM FROM problem_list 
+			    	   WHERE pro_version=#{version} 
+			           AND pro_nopass_num=1 )AS ad)
+			UNION ALL
+				SELECT IF( SUM(ad.sum)>0,SUM(ad.sum),0) SUM 
+				FROM ((SELECT COUNT(*)SUM 
+				       FROM problem_list 
+				       WHERE pro_version=#{version}
+				       AND pro_nopass_num=2 )AS ad)
+			UNION ALL
+				SELECT IF( SUM(ad.sum)>0,SUM(ad.sum),0) SUM 
+				FROM ((SELECT COUNT(*)SUM 
+				 	   FROM problem_list 
+					   WHERE pro_version=#{version}
+				       AND pro_nopass_num>=3 )AS ad)
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_repairs_num_version_return">
+		<result property="SUM" column = "SUM" javaType = "String"/>
+	</resultMap>
+	
+	<select id="bug_by_system_by_test_team" resultMap = "bug_by_system_by_test_team_return">
+		select date_format(test_date,'%Y-%m-%d')as time,
+			   sum(L1_bug_everydate) as sum_L1_bug_everydate,
+			   sum(L2_bug_everydate) as sum_L2_bug_everydate,
+			   sum(L3_bug_everydate) as sum_L3_bug_everydate,
+			   sum(L1_cumulate_found_bug) as sum_L1_cumulate_found_bug,
+			   sum(L2_cumulate_found_bug) as sum_L2_cumulate_found_bug,
+			   sum(cumulate_found_bug) as sum_cumulate_found_bug,
+			   sum(cumulate_del_bug) as sum_cumulate_del_bug,
+			   sum(cumulate_close_bug) as sum_cumulate_close_bug
+		from bug_found_trend_sum,dept_system 
+		where bug_found_trend_sum.system=dept_system.system_name 
+			  and dept_system.test_team = #{group_name}
+			  and test_date >= #{start_time} 
+			  and #{end_time} >= test_date
+		group by test_date
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_by_system_by_test_team_return">
+		<result property="time" column = "time" javaType = "String"/>
+		<result property="sum_L1_bug_everydate" column="sum_L1_bug_everydate" javaType = "String"/>
+		<result property="sum_L2_bug_everydate" column="sum_L2_bug_everydate" javaType="String"/>
+		<result property="sum_L3_bug_everydate" column = "sum_L3_bug_everydate" javaType = "String"/>
+		<result property="sum_L1_cumulate_found_bug" column="sum_L1_cumulate_found_bug" javaType = "String"/>
+		<result property="sum_L2_cumulate_found_bug" column="sum_L2_cumulate_found_bug" javaType="String"/>
+		<result property="sum_cumulate_found_bug" column = "sum_cumulate_found_bug" javaType = "String"/>
+		<result property="sum_cumulate_del_bug" column="sum_cumulate_del_bug" javaType = "String"/>
+		<result property="sum_cumulate_close_bug" column="sum_cumulate_close_bug" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_by_system_by_dev_dept" resultMap = "bug_by_system_by_dev_dept_return">
+		select date_format(test_date,'%Y-%m-%d')as time,
+			   sum(L1_bug_everydate) as sum_L1_bug_everydate,
+			   sum(L2_bug_everydate) as sum_L2_bug_everydate,
+			   sum(L3_bug_everydate) as sum_L3_bug_everydate,
+			   sum(L1_cumulate_found_bug) as sum_L1_cumulate_found_bug,
+			   sum(L2_cumulate_found_bug) as sum_L2_cumulate_found_bug,
+			   sum(cumulate_found_bug) as sum_cumulate_found_bug,
+			   sum(cumulate_del_bug) as sum_cumulate_del_bug,
+			   sum(cumulate_close_bug) as sum_cumulate_close_bug
+		from bug_found_trend_sum,dept_system 
+		where bug_found_trend_sum.system=dept_system.system_name 
+			  and dept_system.dev_dept= #{group_name}
+			  and test_date >= #{start_time} 
+			  and #{end_time} >= test_date
+		group by test_date
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_by_system_by_dev_dept_return">
+		<result property="time" column = "time" javaType = "String"/>
+		<result property="sum_L1_bug_everydate" column="sum_L1_bug_everydate" javaType = "String"/>
+		<result property="sum_L2_bug_everydate" column="sum_L2_bug_everydate" javaType="String"/>
+		<result property="sum_L3_bug_everydate" column = "sum_L3_bug_everydate" javaType = "String"/>
+		<result property="sum_L1_cumulate_found_bug" column="sum_L1_cumulate_found_bug" javaType = "String"/>
+		<result property="sum_L2_cumulate_found_bug" column="sum_L2_cumulate_found_bug" javaType="String"/>
+		<result property="sum_cumulate_found_bug" column = "sum_cumulate_found_bug" javaType = "String"/>
+		<result property="sum_cumulate_del_bug" column="sum_cumulate_del_bug" javaType = "String"/>
+		<result property="sum_cumulate_close_bug" column="sum_cumulate_close_bug" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_by_system_by_system" resultMap = "bug_by_system_by_system_return">
+		SELECT DATE_FORMAT(test_date,'%Y-%m-%d')AS TIME,
+		       L1_bug_everydate,
+		       L2_bug_everydate,
+			   L3_bug_everydate,
+			   L1_cumulate_found_bug,
+			   L2_cumulate_found_bug,
+			   cumulate_found_bug,
+			   cumulate_del_bug,
+			   cumulate_close_bug 
+	    FROM bug_found_trend_sum a,dept_system b 
+		WHERE  a.system= b.system_name 
+		       AND b.system_alias =#{system}
+		       and test_date >= #{start_time} 
+			   and #{end_time} >= test_date 
+		ORDER BY a.test_date
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_by_system_by_system_return">
+		<result property="TIME" column = "TIME" javaType = "String"/>
+		<result property="L1_bug_everydate" column="L1_bug_everydate" javaType = "String"/>
+		<result property="L2_bug_everydate" column="L2_bug_everydate" javaType="String"/>
+		<result property="L3_bug_everydate" column = "L3_bug_everydate" javaType = "String"/>
+		<result property="L1_cumulate_found_bug" column="L1_cumulate_found_bug" javaType = "String"/>
+		<result property="L2_cumulate_found_bug" column="L2_cumulate_found_bug" javaType="String"/>
+		<result property="cumulate_found_bug" column = "cumulate_found_bug" javaType = "String"/>
+		<result property="cumulate_del_bug" column="cumulate_del_bug" javaType = "String"/>
+		<result property="cumulate_close_bug" column="cumulate_close_bug" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_by_version_query_gompertz_defineList" resultMap = "bug_by_version_query_gompertz_defineList_return">
+		select system_version, 
+			   test_date, 
+			   bug_found_num 
+	    from gompertz_define
+	    where system_version = #{version}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_by_version_query_gompertz_defineList_return">
+		<result property="system_version" column = "system_version" javaType = "String"/>
+		<result property="test_date" column="test_date" javaType = "String"/>
+		<result property="bug_found_num" column="bug_found_num" javaType="String"/>
+	</resultMap>
+	
+	
+	<select id="bug_by_version_query_bug_found_trend" resultMap = "bug_by_version_query_bug_found_trend_return">
+		select test_date, 
+		       l1_bug_everydate, 
+		       l2_bug_everydate, 
+		       l3_bug_everydate, 
+			   l1_cumulate_found_bug, 
+			   l2_cumulate_found_bug, 
+			   cumulate_found_bug, 
+			   cumulate_del_bug, 
+			   cumulate_close_bug 
+		from bug_found_trend 
+		where system_version = #{version}
+		order by test_date
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_by_version_query_bug_found_trend_return">
+		<result property="test_date" column = "test_date" javaType = "String"/>
+		<result property="l1_bug_everydate" column="l1_bug_everydate" javaType = "String"/>
+		<result property="l2_bug_everydate" column="l2_bug_everydate" javaType="String"/>
+		<result property="l3_bug_everydate" column = "l3_bug_everydate" javaType = "String"/>
+		<result property="l1_cumulate_found_bug" column="l1_cumulate_found_bug" javaType = "String"/>
+		<result property="l2_cumulate_found_bug" column="l2_cumulate_found_bug" javaType="String"/>
+		<result property="cumulate_found_bug" column = "cumulate_found_bug" javaType = "String"/>
+		<result property="cumulate_del_bug" column="cumulate_del_bug" javaType = "String"/>
+		<result property="cumulate_close_bug" column="cumulate_close_bug" javaType="String"/>
+	</resultMap>
+	
+	
+	<select id="bug_by_version_query_bug_found_trend_left_join_gompertz_define" resultMap = "bug_by_version_query_bug_found_trend_left_join_gompertz_define_return">
+		select a.test_date, 
+		       a.l1_bug_everydate, 
+		       a.l2_bug_everydate, 
+		       a.l3_bug_everydate, 
+		       a.l1_cumulate_found_bug, 
+		       a.l2_cumulate_found_bug, 
+		       a.cumulate_found_bug, 
+		       a.cumulate_del_bug, 
+		       a.cumulate_close_bug, 
+		       b.bug_found_num 
+	    from bug_found_trend a 
+	    left join gompertz_define b 
+		on a.test_date = b.test_date 
+		   and a.system_version = b.system_version 
+		where a.system_version = #{version}
+		order by a.test_date
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_by_version_query_bug_found_trend_left_join_gompertz_define_return">
+		<result property="test_date" column = "test_date" javaType = "String"/>
+		<result property="l1_bug_everydate" column="l1_bug_everydate" javaType = "String"/>
+		<result property="l2_bug_everydate" column="l2_bug_everydate" javaType="String"/>
+		<result property="l3_bug_everydate" column = "l3_bug_everydate" javaType = "String"/>
+		<result property="l1_cumulate_found_bug" column="l1_cumulate_found_bug" javaType = "String"/>
+		<result property="l2_cumulate_found_bug" column="l2_cumulate_found_bug" javaType="String"/>
+		<result property="cumulate_found_bug" column = "cumulate_found_bug" javaType = "String"/>
+		<result property="cumulate_del_bug" column="cumulate_del_bug" javaType = "String"/>
+		<result property="cumulate_close_bug" column="cumulate_close_bug" javaType="String"/>
+		<result property="bug_found_num" column="bug_found_num" javaType="String"/>
+	</resultMap>
+	
+	
+	<select id="bug_verify_system_by_test_team" resultMap = "bug_verify_system_by_test_team_return">
+		select sum(no_overtime) as sum_no_overtime, 
+			   sum(overtime) as sum_overtime, 
+			   sum(one_day) as sum_one_day, 
+			   sum(two_day) as sum_two_day, 
+			   sum(more_than_two_day) as sum_more_than_two_day
+	    from bug_check_time 
+	    where system_version 
+	    in (select distinct(b.system_version) 
+	        from bug_found_trend as b,dept_system as c 
+	        where b.system=c.system_name 
+	              and deal_or_check = 'check' 
+	              and c.test_team = #{group_name} 
+	              and b.test_date >= #{start_time} 
+	              and #{end_time} >= b.test_date)
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_verify_system_by_test_team_return">
+		<result property="sum_no_overtime" column = "sum_no_overtime" javaType = "String"/>
+		<result property="sum_overtime" column="sum_overtime" javaType = "String"/>
+		<result property="sum_one_day" column="sum_one_day" javaType="String"/>
+		<result property="sum_two_day" column="sum_two_day" javaType="String"/>
+		<result property="sum_more_than_two_day" column="sum_more_than_two_day" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_verify_system_by_dev_dept" resultMap = "bug_verify_system_by_dev_dept_return">
+		select sum(no_overtime) as sum_no_overtime, 
+			   sum(overtime) as sum_overtime, 
+			   sum(one_day) as sum_one_day, 
+			   sum(two_day) as sum_two_day, 
+			   sum(more_than_two_day) as sum_more_than_two_day
+	    from bug_check_time 
+	    where system_version 
+	    in (select distinct(b.system_version) 
+	        from bug_found_trend as b,dept_system as c 
+	        where b.system=c.system_name 
+	              and deal_or_check = 'check' 
+	              and c.dev_dept = #{group_name} 
+	              and b.test_date >= #{start_time} 
+	              and #{end_time} >= b.test_date)
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_verify_system_by_dev_dept_return">
+		<result property="sum_no_overtime" column = "sum_no_overtime" javaType = "String"/>
+		<result property="sum_overtime" column="sum_overtime" javaType = "String"/>
+		<result property="sum_one_day" column="sum_one_day" javaType="String"/>
+		<result property="sum_two_day" column="sum_two_day" javaType="String"/>
+		<result property="sum_more_than_two_day" column="sum_more_than_two_day" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_verify_system_by_system" resultMap = "bug_verify_system_by_system_return">
+		select sum(bct.no_overtime) as sum_no_overtime,  
+		       sum(bct.overtime) as sum_overtime, 
+		       sum(bct.one_day) as sum_one_day, 
+		       sum(bct.two_day) as sum_two_day, 
+			   sum(bct.more_than_two_day) as sum_more_than_two_day
+	    from bug_check_time bct, version_plantime vp, dept_system ds 
+	    where bct.system_version = vp.system_version 
+	          and vp.sub_system_name = ds.system_name 
+			  and ds.system_alias = #{system} 
+			  and vp.reviewtest_end_date >= #{start_time} 
+			  and #{end_time} >= vp.reviewtest_end_date 
+			  and bct.deal_or_check = 'check' 
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_verify_system_by_system_return">
+		<result property="sum_no_overtime" column = "sum_no_overtime" javaType = "String"/>
+		<result property="sum_overtime" column="sum_overtime" javaType = "String"/>
+		<result property="sum_one_day" column="sum_one_day" javaType="String"/>
+		<result property="sum_two_day" column="sum_two_day" javaType="String"/>
+		<result property="sum_more_than_two_day" column="sum_more_than_two_day" javaType="String"/>
+	</resultMap>
+	
+	<select id="bug_verify_version" resultMap = "bug_verify_version_return">
+		select no_overtime,
+		       overtime,
+		       one_day,
+		       two_day,
+		       more_than_two_day 
+		from bug_check_time 
+		where deal_or_check ='check' 
+		      AND system_version = #{version}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="bug_verify_version_return">
+		<result property="no_overtime" column = "no_overtime" javaType = "String"/>
+		<result property="overtime" column="overtime" javaType = "String"/>
+		<result property="one_day" column="one_day" javaType="String"/>
+		<result property="two_day" column="two_day" javaType = "String"/>
+		<result property="more_than_two_day" column="more_than_two_day" javaType="String"/>
+	</resultMap>
+	
+</mapper>

@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd">
+
+<!-- 该xml需先在mybatis.xml中注册 -->
+<mapper namespace="com.fudax.sqcs.env.info.dao.EnvInfoDAO">
+
+	<select id="queryEnvInfo" resultMap = "queryEnvInfo_return">
+		select 
+		a.system_id,
+		a.system_name, 
+		a.instance_name, 
+		a.login_address, 
+		b.system_version, 
+		a.jdbc_tns
+	    from (select 
+	    		si.* 
+	    	  from system_info si, dept_system ds 
+	    	  where  
+	    	  si.del_flag = 0 
+	    	  <if test="condition == 'test_team'">
+	    	  and ds.test_team = #{group_name}
+	    	  </if>
+	    	  <if test="condition == 'dev_dept'">
+	    	  and ds.dev_dept = #{group_name}
+	    	  </if>
+	    	  <if test="condition == 'system_alias'">
+	    	  and ds.system_alias = #{system}
+	    	  </if>
+	    	  	and ds.system_alias = si.system_name) as a 
+	   left outer join (select * 
+	   					from version_plantime 
+	   					where reviewtest_end_date >= sysdate())as b 
+	   on b.environment = a.instance_name 
+	   order by b.system_version desc, a.system_name asc, a.instance_name asc
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="queryEnvInfo_return">
+		<id property="system_id" column="system_id" javaType = "String"/>
+		<result property="system_name" column = "system_name" javaType = "String"/>
+		<result property="instance_name" column="instance_name" javaType = "String"/>
+		<result property="login_address" column="login_address" javaType="String"/>
+		<result property="system_version" column="system_version" javaType="String"/>
+		<result property="jdbc_tns" column="jdbc_tns" javaType="String"/>
+	</resultMap>
+	
+	<select id="detailQuery" resultMap = "detailQuery_return">
+		select * 
+		from system_info
+		where system_id = #{system_id}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="detailQuery_return">
+		<id property="system_id" column="system_id" javaType = "String"/>
+		<result property="system_name" column = "system_name" javaType = "String"/>
+		<result property="dept_name" column="dept_name" javaType = "String"/>
+		<result property="test_team" column="test_team" javaType="String"/>
+		<result property="dev_team" column = "dev_team" javaType = "String"/>
+		<result property="instance_name" column="instance_name" javaType = "String"/>
+		<result property="login_address" column="login_address" javaType="String"/>
+		<result property="t3_uri" column = "t3_uri" javaType = "String"/>
+		<result property="jdbc_tns" column="jdbc_tns" javaType = "String"/>
+		<result property="test_users" column="test_users" javaType="String"/>
+		<result property="description" column="description" javaType="String"/>
+		<result property="del_flag" column = "del_flag" javaType = "String"/>
+		<result property="fcd" column="fcd" javaType = "String"/>
+		<result property="lcd" column="lcd" javaType="String"/>
+	</resultMap>
+	
+	<select id="dataExistForAddAboutCount" resultMap = "dataExistForAddAboutCount_return">
+		select 
+			count(*) as counter 
+		from system_info 
+		where system_name =#{system_name} 
+		      and instance_name = #{instance_name}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="dataExistForAddAboutCount_return">
+		<result property="counter" column="counter" javaType="String"/>
+	</resultMap>
+	<select id="dataExistForAddAboutDelFlag" resultMap = "dataExistForAddAboutDelFlag_return">
+		select 
+			del_flag 
+		from system_info 
+		where system_name = #{system_name} 
+			  and instance_name = #{instance_name}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="dataExistForAddAboutDelFlag_return">
+		<result property="del_flag" column="del_flag" javaType="String"/>
+	</resultMap>
+	
+	
+	<select id="queryIdByBusiKey" resultMap = "queryIdByBusiKey_return">
+		select 
+			system_id 
+		from system_info 
+		where system_name = #{system_name}
+			  and instance_name = #{instance_name}
+			  and del_flag = 0 
+			  order by system_id desc
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="queryIdByBusiKey_return">
+		<result property="system_id" column="system_id" javaType="String"/>
+	</resultMap>
+	
+	<select id="dataExistForUpdateWhenChangePrimaryIsTrueAboutSelectCount" resultMap = "dataExistForUpdateWhenChangePrimaryIsTrueAboutSelectCount_return">
+		select 
+			count(*) as counter 
+		from system_info 
+		where system_name = #{system_name} 
+		and instance_name = #{instance_name}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="dataExistForUpdateWhenChangePrimaryIsTrueAboutSelectCount_return">
+		<result property="counter" column="counter" javaType="String"/>
+	</resultMap>
+	
+	<select id="dataExistForUpdateWhenChangePrimaryIsTrueAboutSelectDelFlag" resultMap = "dataExistForUpdateWhenChangePrimaryIsTrueAboutSelectDelFlag_return">
+		select 
+			del_flag 
+		from system_info 
+		where system_name = #{system_name} 
+			  and instance_name = #{instance_name}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="dataExistForUpdateWhenChangePrimaryIsTrueAboutSelectDelFlag_return">
+		<result property="del_flag" column="del_flag" javaType="String"/>
+	</resultMap>
+	
+	<select id="dataExistForUpdateWhenChangePrimaryIsFalseAboutSelectCount" resultMap = "dataExistForUpdateWhenChangePrimaryIsFalseAboutSelectCount_return">
+		select 
+			count(*) as counter 
+		from system_info 
+		where system_name = #{system_name} 
+			  and instance_name = #{instance_name}
+			  and system_id != #{system_id}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="dataExistForUpdateWhenChangePrimaryIsFalseAboutSelectCount_return">
+		<result property="counter" column="counter" javaType="String"/>
+	</resultMap>
+	
+	<select id="dataExistForUpdateWhenChangePrimaryIsFalseAboutSelectDelFlag" resultMap = "dataExistForUpdateWhenChangePrimaryIsFalseAboutSelectDelFlag_return">
+		select
+			 del_flag 
+		from system_info 
+		where system_name = #{system_name}
+			and instance_name = #{instance_name}
+			and system_id != #{system_id}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="dataExistForUpdateWhenChangePrimaryIsFalseAboutSelectDelFlag_return">
+		<result property="del_flag" column="del_flag" javaType="String"/>
+	</resultMap>
+	
+	<select id="queryDetailById" resultMap = "queryDetailById_return">
+		select 
+			*
+	    from system_info 
+	    where system_id = #{system_id}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="queryDetailById_return">
+		<id property="system_id" column="system_id" javaType = "String"/>
+		<result property="system_name" column = "system_name" javaType = "String"/>
+		<result property="dept_name" column="dept_name" javaType = "String"/>
+		<result property="test_team" column="test_team" javaType="String"/>
+		<result property="dev_team" column = "dev_team" javaType = "String"/>
+		<result property="instance_name" column="instance_name" javaType = "String"/>
+		<result property="login_address" column="login_address" javaType="String"/>
+		<result property="t3_uri" column = "t3_uri" javaType = "String"/>
+		<result property="jdbc_tns" column="jdbc_tns" javaType = "String"/>
+		<result property="test_users" column="test_users" javaType="String"/>
+		<result property="description" column="description" javaType="String"/>
+		<result property="del_flag" column = "del_flag" javaType = "String"/>
+		<result property="fcd" column="fcd" javaType = "String"/>
+		<result property="lcd" column="lcd" javaType="String"/>
+	</resultMap>
+	
+	<select id="instanceOf" resultMap = "instanceOf_return">
+		 select * 
+		 from system_domain 
+		 where instance_name = #{target_Name}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="instanceOf_return">
+		<result property="system_name" column = "system_name" javaType = "String"/>
+		<result property="instance_name" column="instance_name" javaType = "String"/>
+		<result property="instance_type" column="instance_type" javaType="String"/>
+		<result property="console" column = "console" javaType = "String"/>
+		<result property="domain_id" column="domain_id" javaType = "String"/>
+		<result property="midware" column="midware" javaType="String"/>
+		<result property="url_domain" column = "url_domain" javaType = "String"/>
+		<result property="cluster" column="cluster" javaType = "String"/>
+		<result property="del_flag" column="del_flag" javaType="String"/>
+		<result property="fcd" column="fcd" javaType = "String"/>
+		<result property="lcd" column="lcd" javaType="String"/>
+	</resultMap>
+	
+	<select id="getLastInsertId" resultMap = "getLastInsertId_return">
+		 select 
+		 	last_insert_id() as id 
+		 from system_info
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="getLastInsertId_return">
+		<result property="id" column = "id" javaType = "String"/>
+	</resultMap>
+	<select id="getSystemNameByIns" resultMap = "getSystemNameByIns_return">
+		 select system_name 
+		 from system_info 
+		 where instance_name = #{instance_name}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="getSystemNameByIns_return">
+		<result property="system_name" column = "system_name" javaType = "String"/>
+	</resultMap>
+	<select id="getAllSystemInfo" resultMap = "getAllSystemInfo_return">
+		select distinct system_name, 
+		       instance_name 
+		from system_info 
+		where del_flag = 0
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="getAllSystemInfo_return">
+		<result property="system_name" column = "system_name" javaType = "String"/>
+		<result property="instance_name" column = "instance_name" javaType = "String"/>
+	</resultMap>
+	
+	<update id="updateDeleted" parameterType="Map">
+		update 
+			system_info 
+		set del_flag = 0  
+		where system_name = #{system_name}
+			  and instance_name= #{instance_name}
+	</update>
+	
+	<update id="updateSystemInfo" parameterType="Map">
+		update 
+			system_info 
+		set system_name=#{system_name},
+			dept_name=#{dept_name},
+			test_team=#{test_team},
+			dev_team=#{dev_team},
+			instance_name=#{instance_name},
+			login_address=#{login_address},
+			t3_uri=#{t3_uri},
+			jdbc_tns=#{jdbc_tns},
+			test_users=#{test_users},
+			description=#{description} 
+		where system_id=#{system_id}
+	</update>
+	
+	<update id="updateDeletedExtraSetDelFlagWith1" parameterType="Map">
+		update 
+			system_info 
+		set del_flag = 1  
+		where system_id = #{system_id}
+	</update>
+	
+	<update id="updateDeletedExtraSetDelFlagWith0" parameterType="Map">
+		update 
+			system_info 
+		set del_flag = 0  
+		where system_name = #{system_name}
+			  and instance_name = #{instance_name}
+			  and system_id != #{system_id}
+	</update>
+	
+	<insert id="addSystemInfo" parameterType="Map">
+		insert into 
+			system_info(system_name,dept_name, test_team,dev_team,instance_name,login_address,t3_uri,jdbc_tns,test_users,description) 
+			values(#{system_name},#{dept_name},#{test_team},#{dev_team},#{instance_name},#{login_address},#{t3_uri},#{jdbc_tns},#{test_users},#{description})
+	</insert>
+	
+	<update id="deleteRecordForUpdate">
+		update 
+			system_info 
+		set del_flag = 1 
+		where system_id = #{system_id}
+	</update>
+	
+	
+	<delete id="deleteRecordForDelete">
+		delete from 
+			system_info 
+		where system_name = #{system_name}
+			and instance_name = #{instance_name}
+			and system_id != #{system_id}
+	</delete>
+</mapper>

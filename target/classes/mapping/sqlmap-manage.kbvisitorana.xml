@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd">
+
+<!-- 该xml需先在mybatis.xml中注册 -->
+
+<mapper namespace="com.fudax.sqcs.visitor.dao.KBVisitorAnaDAO">
+	<!-- namespace与对应的调用接口一致 -->
+
+	<!-- 简单的按id查询单条数据 -->
+	<select id="queryGraghNameByGraghType" parameterType="String" resultMap="queryGraghNameByGraghType_result">
+		select
+		count(*) as
+		count,
+		gragh_name
+		from visitor_analysis,kb_gragh_link
+		where url like concat('%',link_jsp) and
+		gragh_type =#{gragh_type} group by gragh_name
+	</select>
+
+	<resultMap id="queryGraghNameByGraghType_result" type="java.util.LinkedHashMap">
+		<result property="count" column="count" javaType="String" />
+		<result property="gragh_name" column="gragh_name" javaType="String" />
+	</resultMap>
+
+	<select id="queryVdateList" parameterType="String" resultMap="queryVdateList_return">
+		select
+		count(*) as counter,
+		date_format(vdate, '%Y-%m-%d') as times
+		from visitor_analysis
+		where vdate >= #{pro_date_begin}
+		and
+		#{pro_date_end} >= vdate
+		group by times
+	</select>
+	<resultMap id="queryVdateList_return" type="java.util.LinkedHashMap">
+		<result property="counter" column="counter" javaType="String" />
+		<result property="times" column="times" javaType="String" />
+	</resultMap>
+
+	<select id="queryTeamVisitorAna" resultMap="queryTeamVisitorAna_result">
+	select 
+	  count(v.id) as visitor_count,
+	  ifnull(
+	    (select 
+	      team_name 
+	    from
+	      um_info um 
+	    where um.um_no = substring_index(v.user, '\\', - 1) 
+	      and um.dept_name = '测试管理部'),
+	    '外包或账号信息未维护'
+	  ) as user_team_name 
+	from
+	  visitor_analysis v 
+	where v.user is not null 
+	group by user_team_name 
+	order by visitor_count ;
+	</select>
+
+	<resultMap id="queryTeamVisitorAna_result" type="java.util.LinkedHashMap">
+		<result property="visitor_count" column="visitor_count" javaType="String" />
+		<result property="team_name" column="team_name" javaType="String" />
+	</resultMap>
+
+	<select id="queryDeptVisitorAna" resultMap="queryDeptVisitorAna_result">
+	select 
+	  count(v.id) as visitor_count,
+	  ifnull(
+	    (select 
+	      dept_name 
+	    from
+	      um_info um 
+	    where um.um_no = substring_index(v.user, '\\', - 1) 
+	      and um.dept_name not in ('测试管理部')),
+	    '外包或账号信息未维护'
+	  ) as user_team_name 
+	from
+	  visitor_analysis v 
+	where v.user is not null 
+	group by user_team_name 
+	order by visitor_count ;
+	</select>
+
+	<resultMap id="queryDeptVisitorAna_result" type="java.util.LinkedHashMap">
+		<result property="visitor_count" column="visitor_count" javaType="String" />
+		<result property="team_name" column="team_name" javaType="String" />
+	</resultMap>
+
+</mapper>

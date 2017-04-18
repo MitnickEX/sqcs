@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd">
+
+<!-- 该xml需先在mybatis.xml中注册 -->
+<mapper namespace="com.fudax.sqcs.version.dao.ReleaseAnalysisDAO">
+
+	<select id="getPlusChartsWithSystemIsAllAndTimeTypeIsReleaseAndGroupTypeIsTestTeam" resultMap = "getPlusChartsWithSystemIsAllAndTimeTypeIsReleaseAndGroupTypeIsTestTeam_return">
+		select count(1) as counter
+		from (select ifnull(vp.is_delay, 'N') as is_delay 
+			  from version_plantime vp,dept_system ds 
+			  where vp.sub_system_name = ds.system_name 
+			  and  ds.test_team =#{group_name}
+			  and vp.reviewtest_end_date >=#{begin} 
+			  and  #{end} >= vp.reviewtest_end_date) as a 
+	    where a.is_delay in ('Y', 'N') 
+	    group by a.is_delay 
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="getPlusChartsWithSystemIsAllAndTimeTypeIsReleaseAndGroupTypeIsTestTeam_return">
+		<result property="counter" column="counter" javaType="String"/>
+	</resultMap>
+	<select id="getPlusChartsWithSystemIsAllAndTimeTypeIsReleaseAndGroupTypeIsNotTestTeam" resultMap = "getPlusChartsWithSystemIsAllAndTimeTypeIsReleaseAndGroupTypeIsNotTestTeam_return">
+		select count(1) as counter
+		from (select ifnull(vp.is_delay, 'N') as is_delay 
+			  from version_plantime vp,dept_system ds 
+			  where vp.sub_system_name = ds.system_name 
+			  and  ds.dev_dept =#{group_name}
+			  and vp.reviewtest_end_date >=#{begin} 
+			  and  #{end} >= vp.reviewtest_end_date) as a 
+	    where a.is_delay in ('Y', 'N') 
+	    group by a.is_delay 
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="getPlusChartsWithSystemIsAllAndTimeTypeIsReleaseAndGroupTypeIsNotTestTeam_return">
+		<result property="counter" column="counter" javaType="String"/>
+	</resultMap>
+	<select id="getPlusChartsWithSystemIsAllAndTimeTypeIsNotReleaseAndGroupTypeIsTestTeam" resultMap = "getPlusChartsWithSystemIsAllAndTimeTypeIsNotReleaseAndGroupTypeIsTestTeam_return">
+		select count(1) as counter
+		from (select ifnull(vp.is_delay, 'N') as is_delay 
+			  from version_plantime vp,dept_system ds 
+			  where vp.sub_system_name = ds.system_name 
+			  and  ds.test_team =#{group_name}
+			  and vp.first_handover_test_time >=#{begin} 
+			  and  #{end} >= vp.first_handover_test_time) as a 
+	    where a.is_delay in ('Y', 'N') 
+	    group by a.is_delay 
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="getPlusChartsWithSystemIsAllAndTimeTypeIsNotReleaseAndGroupTypeIsTestTeam_return">
+		<result property="counter" column="counter" javaType="String"/>
+	</resultMap>
+	<select id="getPlusChartsWithSystemIsAllAndTimeTypeIsNotReleaseAndGroupTypeIsNotTestTeam" resultMap = "getPlusChartsWithSystemIsAllAndTimeTypeIsNotReleaseAndGroupTypeIsNotTestTeam_return">
+		select count(1) as counter
+		from (select ifnull(vp.is_delay, 'N') as is_delay 
+			  from version_plantime vp,dept_system ds 
+			  where vp.sub_system_name = ds.system_name 
+			  and  ds.dev_dept =#{group_name}
+			  and vp.first_handover_test_time >=#{begin} 
+			  and  #{end} >= vp.first_handover_test_time) as a 
+	    where a.is_delay in ('Y', 'N') 
+	    group by a.is_delay 
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="getPlusChartsWithSystemIsAllAndTimeTypeIsNotReleaseAndGroupTypeIsNotTestTeam_return">
+		<result property="counter" column="counter" javaType="String"/>
+	</resultMap>
+	<select id="getPlusChartsWithSystemIsNotAllAndTimeTypeIsRelease" resultMap = "getPlusChartsWithSystemIsNotAllAndTimeTypeIsRelease_return">
+		select count(1) as counter
+		from (select ifnull(vp.is_delay, 'N') as is_delay 
+			  from version_plantime vp,dept_system ds 
+			  where vp.sub_system_name = ds.system_name 
+			  and  ds.system_alias =#{system}
+			  and vp.reviewtest_end_date >=#{begin} 
+			  and  #{end} >= vp.reviewtest_end_date) as a 
+	    where a.is_delay in ('Y', 'N') 
+	    group by a.is_delay 
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="getPlusChartsWithSystemIsNotAllAndTimeTypeIsRelease_return">
+		<result property="counter" column="counter" javaType="String"/>
+	</resultMap>
+	
+	<select id="getPlusChartsWithSystemIsNotAllAndTimeTypeIsNotRelease" resultMap = "getPlusChartsWithSystemIsNotAllAndTimeTypeIsNotRelease_return">
+		select count(1) as counter
+		from (select ifnull(vp.is_delay, 'N') as is_delay 
+			  from version_plantime vp,dept_system ds 
+			  where vp.sub_system_name = ds.system_name 
+			  and  ds.system_alias =#{system}
+			  and vp.first_handover_test_time >=#{begin} 
+			  and  #{end} >= vp.first_handover_test_time) as a 
+	    where a.is_delay in ('Y', 'N') 
+	    group by a.is_delay 
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="getPlusChartsWithSystemIsNotAllAndTimeTypeIsNotRelease_return">
+		<result property="counter" column="counter" javaType="String"/>
+	</resultMap>
+	
+</mapper>

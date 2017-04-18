@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd">
+
+<!-- 该xml需先在mybatis.xml中注册 -->
+
+<mapper namespace="com.fudax.sqcs.problem.dao.ProblemInfoDAO">
+
+	<select id="detailQuery" resultMap="detailQuery_result">
+		select upr.*,
+		pst.status_desc,
+		ps.source_desc
+		from
+		user_problem_record upr, problem_status_table pst, problem_source_table ps
+		where upr.pro_source =ps.source_code
+		and upr.pro_status = pst.status_code
+		and upr.pro_id = #{pro_id}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="detailQuery_result">
+		<id column="pro_id" property="pro_id" javaType="String" />
+		<result column="pro_summary" property="pro_summary" javaType="String" />
+		<result column="pro_source" property="pro_source" javaType="String" />
+		<result column="pro_user" property="pro_user" javaType="String" />
+		<result column="pro_status" property="pro_status" javaType="String" />
+		<result column="sys_version" property="sys_version" javaType="String" />
+		<result column="suggest_fixer" property="suggest_fixer" javaType="String" />
+		<result column="real_fixer" property="real_fixer" javaType="String" />
+		<result column="pro_attach" property="pro_attach" javaType="String" />
+		<result column="pro_detail" property="pro_detail" javaType="String" />
+		<result column="fix_desc" property="fix_desc" javaType="String" />
+		<result column="create_date" property="create_date" javaType="String" />
+		<result column="fix_date" property="fix_date" javaType="String" />
+		<result column="close_date" property="close_date" javaType="String" />
+		<result column="fcd" property="fcd" javaType="String" />
+		<result column="lcd" property="lcd" javaType="String" />
+		<result column="status_desc" property="status_desc" javaType="String" />
+		<result column="source_desc" property="source_desc" javaType="String" />
+	</resultMap>
+	
+	<select id="query" resultMap="query_result">
+		select
+		upr.pro_id,
+		pst.status_desc,
+		upr.pro_summary,
+		upr.real_fixer,
+		upr.create_date
+		from user_problem_record upr, problem_status_table pst,
+		problem_source_table ps
+		where
+		upr.pro_source = ps.source_code
+		and upr.pro_status = pst.status_code
+		and ps.source_desc = #{pro_source}
+		and pst.status_desc = #{Pro_status}
+		and upr.create_date >=
+		#{pro_date_begin}
+		and #{pro_date_end} > upr.create_date
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="query_result">
+		<id column="pro_id" property="pro_id" javaType="String" />
+		<result column="status_desc" property="status_desc" javaType="String" />
+		<result column="pro_summary" property="pro_summary" javaType="String" />
+		<result column="real_fixer" property="real_fixer" javaType="String" />
+		<result column="create_date" property="create_date" javaType="String" />
+	</resultMap>
+
+	<insert id="add" useGeneratedKeys="true" parameterType="java.util.LinkedHashMap">
+		<selectKey keyProperty="pro_id" order="AFTER" resultType="java.lang.String">
+            select last_insert_id()
+        </selectKey>
+		insert into
+		user_problem_record(pro_summary,pro_source,
+		pro_user,pro_status,sys_version,suggest_fixer,real_fixer,pro_attach,pro_detail,fix_desc)
+		values(#{pro_summary},#{source_code},#{pro_user},1,#{pro_version},#{pro_suggest},"",#{pro_attach},#{pro_detail},"")
+	</insert>
+	
+	<update id="updateWhenToBeContainsClose" parameterType="Map">
+		update
+		user_problem_record
+		set
+		pro_status=#{status_code},
+		real_fixer=#{real_fixer},
+		fix_desc=#{fix_desc},
+		close_date=#{current_time}
+		where pro_id=#{pro_id}
+	</update>
+	
+	<update id="updateWhenToBeNotContainsClose" parameterType="Map">
+		update
+		user_problem_record
+		set
+		pro_status=#{status_code},
+		real_fixer=#{real_fixer},
+		fix_desc=#{fix_desc},
+		fix_date=#{current_time}
+		where pro_id=#{pro_id}
+	</update>
+	
+	<select id="querySourceCode" parameterType="String" resultMap="querySourceCode_result">
+		select
+		source_code
+		from
+		problem_source_table
+		where source_desc = #{source_desc}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="querySourceCode_result">
+		<result column="source_code" property="source_code" javaType="String" />
+	</resultMap>
+	
+	<select id="queryStatusCode" parameterType="String" resultMap="queryStatusCode_result">
+		select
+		status_code
+		from
+		problem_status_table
+		where status_desc = #{status_desc}
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="queryStatusCode_result">
+		<result column="status_code" property="status_code" javaType="String" />
+	</resultMap>
+
+</mapper>
