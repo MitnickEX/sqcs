@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd">
+
+<!-- 该xml需先在mybatis.xml中注册 -->
+<mapper namespace="com.fudax.sqcs.srs.dao.SRAnalyseDAO">
+	<select id="sr_ana_rm" resultMap = "sr_ana_rm_return">
+	select 
+	  s.sr_id,
+	  s.date_submit,
+	  s.date_add_to_rm,
+	  s.date_dev_complete,
+	  a.schedule_date as date_test_passed 
+	from
+	  (select 
+	    si.sr_id,
+	    si.date_submit,
+	    si.date_add_to_rm,
+	    si.date_dev_complete 
+	  from
+	    sr_info si
+	  where si.system_version = #{system_version}) s 
+	  left join 
+	    (select 
+	      sr_code,
+	      min(schedule_date) as schedule_date
+	    from
+	      test_schedule
+	    where test_plan = 'ST进度计划' 
+	    and passed_percent = '100.00%' 
+	    and system_version = #{system_version}
+	    group by sr_code) a 
+	    on s.sr_id = a.sr_code
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="sr_ana_rm_return">
+		<result property="date_submit" column = "date_submit" javaType = "String"/>
+		<result property="date_add_to_rm" column="date_add_to_rm" javaType = "String"/>
+		<result property="date_dev_complete" column="date_dev_complete" javaType="String"/>
+		<result property="date_test_passed" column="date_test_passed" javaType="String"/>
+	</resultMap>
+	<select id="query_rm_plan" resultMap = "query_rm_plan_return">
+		select proc_date 
+		from work_calendar 
+		where proc_date between (select ifnull( date(rm_create_date),
+								        date(first_handover_test_time) ) 
+								 from version_plantime where system_version =#{rmNo}) 
+			  and (select date(reviewtest_end_date) 
+			       from version_plantime 
+			       where system_version = #{system_version}) 
+			  and is_work_day = 1 
+	    order by proc_date 
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="query_rm_plan_return">
+		<result property="proc_date" column = "proc_date" javaType = "String"/>
+	</resultMap>
+	<select id="sr_ana_dept" resultMap = "sr_ana_dept_return">
+		select s.date_submit, 
+			   s.date_add_to_rm, 
+			   s.date_dev_complete, 
+			   min(a.schedule_date) as date_test_passed 
+		from (select si.*, 
+				     vp.reviewtest_end_date 
+			  from sr_info si, version_plantime vp, dept_system ds 
+			  where si.system_version = vp.system_version 
+			        and vp.sub_system_name = ds.system_name 
+			        and ds.test_team = #{group_name} 
+			        and vp.reviewtest_end_date >= #{begin_date}
+				 	and  #{end_date} >=vp.reviewtest_end_date) s 
+		left join (select * from test_schedule) a 
+		on s.sr_id = a.sr_code
+		   and a.test_plan = 'ST进度计划' 
+		   and a.passed_percent = '100.00%' 
+		group by s.sr_id 
+	</select>
+	<resultMap type="java.util.LinkedHashMap" id="sr_ana_dept_return">
+		<result property="date_submit" column = "date_submit" javaType = "String"/>
+		<result property="date_add_to_rm" column = "date_add_to_rm" javaType = "String"/>
+		<result property="date_dev_complete" column = "date_dev_complete" javaType = "String"/>
+		<result property="date_test_passed" column = "date_test_passed" javaType = "String"/>
+	</resultMap>
+	
+	
+</mapper>
